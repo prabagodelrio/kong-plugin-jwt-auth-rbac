@@ -22,7 +22,9 @@ roles given in the plugin configuration.
 | ---------------- | ------ | -------- | ------- | ----------- |
 | roles_claim_name | string | X        | `roles` | Name of the claim/attribute in the JWT that contains the roles to check |
 | roles            | array  | -        |         | List of 1 or more roles that are allowed to use the resource (route, service, etc) |
-| msg error        | string | X        | `You cannot consume this service` | Customize the error message |
+| msg error any    | string | X  |`To be able to use this service you must have at least one of the roles configured` | Customize the error message |
+| msg error all    | string | X  | `In order to use this service you must match all the roles configured with the associated ones in the JWT token` | Customize the error message |
+| msg error not roles in claims| string | X   | `The claim roles are not informed in the JWT token` | Customize the error message |
 | policy           | string | X        | `any`   | Determines if at least one, or all roles should match. One of: `any` or `all` |
 
 ## Example: enabling the plugin on a route

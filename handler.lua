@@ -129,7 +129,10 @@ function JWTAuthHandler:access(conf)
     return false, {status = 401, message = "Bad token; " .. tostring(err)}
   end
   
-  local msg_error = conf.msg_error
+  local msg_error_all = conf.msg_error_all
+  local msg_error_any = conf.msg_error_any
+  local msg_error_not_roles_claimed = conf.msg_error_not_roles_claimed
+
   local claims = jwt.claims
   local roles = claims[conf.roles_claim_name]
   local roles_table = {}
@@ -138,7 +141,8 @@ function JWTAuthHandler:access(conf)
   if not roles then
     --return responses.send_HTTP_FORBIDDEN("You cannot consume this service")
     return kong.response.exit(403, {
-      message = "You cannot consume this service"
+      -- message = "You cannot consume this service"
+      message = msg_error_not_roles_claimed
     })
   end
 
@@ -159,7 +163,7 @@ function JWTAuthHandler:access(conf)
     --return responses.send_HTTP_FORBIDDEN("You cannot consume this service")
     return kong.response.exit(403, {
       -- message = "You can't use these service"
-      message = msg_error
+      message = msg_error_any .. " " .. roles
     })
   end
 
@@ -167,7 +171,7 @@ function JWTAuthHandler:access(conf)
     --return responses.send_HTTP_FORBIDDEN("You cannot consume this service")
     return kong.response.exit(403, {
       -- message = "You can't use these service"
-      message = msg_error
+      message = msg_error_all .. " " .. roles
     })
   end
 
