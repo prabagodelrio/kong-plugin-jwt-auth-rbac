@@ -57,8 +57,8 @@ Single role in a claim called `perm` as a single simple string:
     "iss": "rVV0Atsoj7QwSX803D4sbBvFRu2EoTLo",
     "iat": 1539775565,
     "exp": 1571311565,
-    "aud": "www.example.com",
-    "sub": "jrocket@example.com",
+    "aud": "www.acme.com",
+    "sub": "user1@acme.com",
     "perm": "write"
 }
 ```
@@ -69,8 +69,8 @@ Multiple roles in a claim called `roles` as an array of strings:
     "iss": "rVV0Atsoj7QwSX803D4sbBvFRu2EoTLo",
     "iat": 1539775565,
     "exp": 1571311565,
-    "aud": "www.example.com",
-    "sub": "jrocket@example.com",
+    "aud": "www.acme.com",
+    "sub": "user2@acme.com",
     "roles": [
         "Editor",
         "Viewer",
