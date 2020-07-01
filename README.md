@@ -3,6 +3,8 @@
 # kong-plugin-jwt-auth-rbac
 Kong plugin that performs authorization based on custom role claim in JWT
 
+Based on the project of bjwschaap https://github.com/bjwschaap/kong-plugin-jwt-auth
+
 ## How to use
 This plugin is typically used on routes to authorize access to a specific
 route by checking the roles claimed in the JWT.
@@ -18,6 +20,7 @@ roles given in the plugin configuration.
 | ---------------- | ------ | -------- | ------- | ----------- |
 | roles_claim_name | string | X        | `roles` | Name of the claim/attribute in the JWT that contains the roles to check |
 | roles            | array  | -        |         | List of 1 or more roles that are allowed to use the resource (route, service, etc) |
+| msg error        | string | X        | `You cannot consume this service` | Customize the error message |
 | policy           | string | X        | `any`   | Determines if at least one, or all roles should match. One of: `any` or `all` |
 
 ## Example: enabling the plugin on a route
@@ -29,6 +32,7 @@ $ curl -X POST http://kong:8001/routes/{route_id}/plugins \
     --data "name=kong-plugin-jwt-auth-rbac" \
     --data "conf.roles_claim_name=Groups" \
     --data "conf.roles=role1,role2,role3" \
+    --data "conf.msg_error=You do not have the necessary role to use this service" \
     --data "conf.policy=all
 ```
 ## JWT roles claim
