@@ -36,7 +36,9 @@ $ curl -X POST http://kong:8001/routes/{route_id}/plugins \
     --data "name=kong-plugin-jwt-auth-rbac" \
     --data "conf.roles_claim_name=Groups" \
     --data "conf.roles=role1,role2,role3" \
-    --data "conf.msg_error=You do not have the necessary role to use this service" \
+    --data "conf.msg_error_any=You do not have the necessary role to use this service" \
+    --data "conf.msg_error_all=You do not have the necessary role to use this service" \
+    --data "conf.msg_error_not_roles_claimed=You do not have the necessary role to use this service" \
     --data "conf.policy=all
 ```
 ## JWT roles claim
