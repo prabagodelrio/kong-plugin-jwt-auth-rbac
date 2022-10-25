@@ -126,7 +126,8 @@ function JWTAuthHandler:access(conf)
   -- decode token to get roles claim
   local jwt, err = jwt_decoder:new(token)
   if err then
-    return false, {status = 401, message = "Bad token; " .. tostring(err)}
+    -- return false, {status = 401, message = "Bad token; " .. tostring(err)}
+    return kong.response.exit(401, { message = "Bad token; " .. tostring(err)})
   end
   
   local msg_error_all = conf.msg_error_all
