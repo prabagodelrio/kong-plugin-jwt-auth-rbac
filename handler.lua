@@ -101,8 +101,9 @@ local function split(str, sep)
   local n=1
   for w in str:gmatch("([^"..sep.."]*)") do
      ret[n] = ret[n] or w:gsub("^%s*(.-)%s*$", "%1") -- strip whitespace
-     if w == "" then
-        n = n + 1
+     if w ~= "" then
+      ret[n] = w
+      n = n + 1
      end
   end
   return ret
