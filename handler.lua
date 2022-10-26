@@ -160,7 +160,16 @@ function JWTAuthHandler:access(conf)
     end
     roles = roles_table
   end
-
+  if type(conf.roles) == "table" then
+  -- in declarative db-less setup the roles can be separated by a space
+  if string.find(conf.roles[1], " ") then
+  conf_roles_table = split(conf.roles[1], " ")
+  end
+  if string.find(conf.roles[1], ",") then
+  conf_roles_table = split(conf.roles[1], ",")
+  end
+  conf.roles = conf_roles_table
+  end
   if conf.policy == policy_ANY and not role_in_roles_claim(conf.roles, roles) then
     --return responses.send_HTTP_FORBIDDEN("You cannot consume this service")
     return kong.response.exit(403, {
