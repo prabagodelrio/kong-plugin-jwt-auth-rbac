@@ -92,33 +92,36 @@ local function split(str, sep)
     return ret
 end
 
-function JWTAuthHandler:access(conf)
+local function do_authorization(conf) 
     -- get the JWT from the shared context
-    local token = kong.ctx.shared.authenticated_jwt_token
+    local token = kong.ctx.shared.authenticated_jwt_token or kong.ctx.shared.jwt_keycloak_token
     if not token then
         kong.log.err("The JWT token cannot be found, make sure that a JWT plugin is enabled")
-        return kong.response.exit(403, { message = "You cannot consume this service" })
+        return false, { status = 403, message = "You cannot consume this service" }
     end
-
-    -- decode token to get roles claim
-    local jwt, err = jwt_decoder:new(token)
-    if err then
-        return kong.response.exit(401, { message = "Bad token; " .. tostring(err) })
-    end
-
-    local msg_error_all = conf.msg_error_all
-
-    local msg_error_any = conf.msg_error_any
-    local msg_error_not_roles_claimed = conf.msg_error_not_roles_claimed
-    local roles_cfg = conf.roles
-    local claims = jwt.claims
-    local roles = claims[conf.roles_claim_name]
-    local roles_table = {}
     
-    -- check if no roles claimed..
-    if not roles then
-        return kong.response.exit(403, { message = msg_error_not_roles_claimed })
+    local jwt, err = {}
+    if token then
+        if type(token) == "table" then
+            jwt = token 
+            -- check if configured roles claim exists 
+            if not jwt.claims[conf.roles_claim_name] then 
+                return false, { status = 403, message =  conf.msg_error_not_roles_claimed }
+            end
+        else
+            -- decode token to get roles claim
+            jwt, err = jwt_decoder:new(token)
+            if err then
+                return false, { status = 401, message = "Bad token; " .. tostring(err) }
+            end
+        end
     end
+
+    local roles = jwt.claims[conf.roles_claim_name]
+    local roles_cfg = conf.roles    
+
+    local roles_table = {}
+
     -- if the claim is a string (single role), make it a table
     if type(roles) == "string" then
         if string.find(roles, ",") then
@@ -128,32 +131,53 @@ function JWTAuthHandler:access(conf)
         end
         roles = roles_table
     end
-        if type(conf.roles) == "table" then
+    
+    -- if roles in the config is a string (single role), make it a table
+    if type(roles_cfg) == "table" then
         -- in declarative db-less setup the roles can be separated by a space
-        if string.find(conf.roles[1], " ") then
-            conf_roles_table = split(conf.roles[1], " ")
+        if string.find(roles_cfg[1], " ") then
+            conf_roles_table = split(roles_cfg[1], " ")
         end
-        if string.find(conf.roles[1], ",") then
-            conf_roles_table = split(conf.roles[1], ",")
+        if string.find(roles_cfg[1], ",") then
+            conf_roles_table = split(roles_cfg[1], ",")
         end
-        conf.roles = conf_roles_table
+        if conf_roles_table then
+            roles_cfg = conf_roles_table
+        end
     end
 
     local err_detail_fmt = "The permitted role for this invocation is [%s] and yours role are [%s]"
     if conf.policy == policy_ANY and not role_in_roles_claim(roles_cfg, roles) then
-        return kong.response.exit(403, {
-            detail = string.format(err_detail_fmt, table.concat(roles_cfg, ", "), table.concat(roles, ", ")),
-            message = msg_error_any
-        })
+        return false, {
+            status = 403,
+            message = conf.msg_error_any,
+            detail = string.format(err_detail_fmt, table.concat(roles_cfg, ", "), table.concat(roles, ", "))
+        }
     end
 
     if conf.policy == policy_ALL and not all_roles_in_roles_claim(roles_cfg, roles) then
-        return kong.response.exit(403, {
-            detail = "The permitted role for this invocation is [" .. table.concat(roles_cfg, ", ") .. "] and yours role are [" .. table.concat(roles, ", ") .. "]",
-            message = msg_error_all
-        })
+        return false, {
+            status = 403,
+            message = conf.msg_error_all, 
+            detail = string.format(err_detail_fmt, table.concat(roles_cfg, ", "), table.concat(roles, ", "))
+        }
     end
 
+    kong.log.debug("The request was authorized using the JWT claim [" .. conf.roles_claim_name .. "]")
+    return true
+end
+
+function JWTAuthHandler:access(conf)
+    local ok, err = do_authorization(conf)
+    if not ok then
+        if err then
+            if err.detail then
+                kong.log.err(err.detail)
+            end
+            return kong.response.exit(err.status, err.errors or { message = err.message })
+        end 
+        return kong.response.exit(500, { message = "An unexpected error occurred during authorization" })
+    end
 end
 
 return JWTAuthHandler
